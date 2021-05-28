@@ -6,7 +6,9 @@ type Metric struct {
 	Fields map[string]interface{} `json:"fields"`
 }
 
-type Metrics []Metric
+type ClientRequest struct {
+	Metrics []Metric `json:"metrics"`
+}
 
 type ServerResponse struct {
 	RequestIntervalInMinutes int `json:"requestIntervalInMinutes"`

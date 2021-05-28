@@ -61,7 +61,7 @@ func (s *Server) HealthCheck(rw http.ResponseWriter, req *http.Request) {
 func (s *Server) RecordMetrics(rw http.ResponseWriter, req *http.Request) {
 	var (
 		err     error
-		metrics Metrics
+		request ClientRequest
 	)
 
 	defer func() {
@@ -70,13 +70,13 @@ func (s *Server) RecordMetrics(rw http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-	if err = json.NewDecoder(req.Body).Decode(&metrics); err != nil {
+	if err = json.NewDecoder(req.Body).Decode(&request); err != nil {
 		return
 	}
 
-	logrus.Debugf("Metrics from request's body: %+v", metrics)
+	logrus.Debugf("Received client request: %+v", request)
 
-	if err = s.databaseClient.addRecords(s.databaseName, metrics...); err != nil {
+	if err = s.databaseClient.addRecords(s.databaseName, request.Metrics...); err != nil {
 		return
 	}
 

@@ -20,7 +20,7 @@ type BinocularsClientAgent struct {
 }
 
 type MetricHandler interface {
-	GatherMetrics() Metrics
+	GatherMetrics() []Metric
 	HandleResponse(response *ServerResponse, err error)
 }
 
@@ -82,13 +82,17 @@ func (c *BinocularsClientAgent) run() {
 	}
 }
 
-func (c *BinocularsClientAgent) SendMetrics(metrics Metrics) (*ServerResponse, error) {
+func (c *BinocularsClientAgent) SendMetrics(metrics []Metric) (*ServerResponse, error) {
 	var (
 		resp    ServerResponse
 		content bytes.Buffer
 	)
 
-	if err := json.NewEncoder(&content).Encode(&metrics); err != nil {
+	request := ClientRequest{
+		Metrics: metrics,
+	}
+
+	if err := json.NewEncoder(&content).Encode(&request); err != nil {
 		return nil, err
 	}
 

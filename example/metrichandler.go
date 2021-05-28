@@ -44,8 +44,8 @@ func NewMyMetricHandler() *MyMetricHandler {
 	return h
 }
 
-func (h *MyMetricHandler) GatherMetrics() client.Metrics {
-	var metrics client.Metrics
+func (h *MyMetricHandler) GatherMetrics() []client.Metric {
+	var metrics []client.Metric
 
 	for _, md := range MetricDefinitions {
 		m := client.Metric{

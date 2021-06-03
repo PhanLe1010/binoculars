@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "binoculars.fullname" . }}
+  labels:
+    {{- include "binoculars.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "binoculars.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "binoculars.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "binoculars.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: APPLICATION_NAME
+              value: {{ .Values.applicationName }}
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "binoculars.secretName" . }}
+                  key: dBUrl
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "binoculars.secretName" . }}
+                  key: dBUser
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "binoculars.secretName" . }}
+                  key: dBPassword
+            - name: QUERY_PERIOD
+              value: {{ .Values.queryPeriod }}
+            - name: PORT
+              value: "{{ .Values.service.port }}"
+          command:
+            - binoculars
+          args:
+            - --debug
+            - start
+            - --application-name
+            - $(APPLICATION_NAME)
+            - --db-url
+            - $(DB_URL)
+            - --db-user
+            - $(DB_USER)
+            - --db-pass
+            - $(DB_PASS)
+            - --query-period
+            - $(QUERY_PERIOD)
+            - --port
+            - $(PORT)
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /v1/healthcheck
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /v1/healthcheck
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
